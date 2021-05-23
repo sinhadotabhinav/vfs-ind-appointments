@@ -26,7 +26,7 @@ def check_appointment():
         selenium_driver.find_element_by_id("plhMain_btnSubmit").click()
         Select(selenium_driver.find_element_by_id("plhMain_cboVisaCategory")).select_by_visible_text(visa_category)
         selenium_driver.find_element_by_id("plhMain_btnSubmit").click()
-        if ("No date(s) available for appointment" not in selenium_driver.page_source):
+        if ("No date(s) available for appointment" in selenium_driver.page_source):
             log.info("No appointments are available, trying again in {} seconds.".format(schedule_interval))
         else:
             log.info("New appointments are available! Please book soon.")
