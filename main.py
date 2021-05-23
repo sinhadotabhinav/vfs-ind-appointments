@@ -110,6 +110,8 @@ def send_email_notification(email_content):
 def setup_selenium_driver():
     chrome_options = Options()
     chrome_options.add_argument("--headless")
+    chrome_options.add_argument('--no-sandbox')
+    chrome_options.add_argument('--disable-dev-shm-usage')    
     driver = webdriver.Chrome(file, options=chrome_options)
     driver.get(base_url)
     log.debug(f"Selenium driver configured successfully for %s.", app_name)

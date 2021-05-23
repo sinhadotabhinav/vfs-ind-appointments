@@ -7,16 +7,35 @@ This application is a VFS appointment notifier to obtain consulate assistance fr
 
 ## Usage
 
+Prerequisites:
+
+> 1. pip and python command line tools
+> 2. chrome browser or chromium in case of a server
+>> [download links](https://chromium.woolyss.com) for chromium, please use appropriate platform.
+> 3. latest chrome driver
+>> [download links](https://chromedriver.chromium.org/downloads) for chromedriver, please use appropriate platform.
+
+
 Fork and clone this repository:
 ```
 $ git clone https://github.com/sinhadotabhinav/vfs-ind-appointments.git
 ```
 
-If the project version of chrome driver does not work then download appropriate one using this [link](https://chromedriver.chromium.org/downloads) and replace the existing `chromedriver` in the root of the project.
-
-Execute the python script
+Place the `chromedriver` in the root of the project.
 
 ```
+vfs-ind-appointments/
+|
+|___chromedriver
+|___LICENSE
+|___main.py
+|___README.md
+```
+
+Install selenium using pip and execute the python script
+
+```
+$ pip install selenium
 $ py main.py
 ```
 
