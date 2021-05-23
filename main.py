@@ -17,7 +17,7 @@ import time
 
 # def check_appointment retireves available appointments
 def check_appointment():
-    log.info("The application is checking appointment availability...")
+    log.info("The application is checking appointment availability for: %s in %s", visa_category, embassy_location_name)
     selenium_driver = setup_selenium_driver()
     try:
         WebDriverWait(selenium_driver, wait_time).until(EC.presence_of_element_located((By.ID, "plhMain_lnkSchApp")))
