@@ -20,22 +20,23 @@ def check_appointment():
     log.info("The application is checking appointment availability...")
     selenium_driver = setup_selenium_driver()
     try:
-        WebDriverWait(selenium_driver, 10).until(EC.presence_of_element_located((By.ID, "plhMain_lnkSchApp")))
+        WebDriverWait(selenium_driver, wait_time).until(EC.presence_of_element_located((By.ID, "plhMain_lnkSchApp")))
         selenium_driver.find_element_by_id("plhMain_lnkSchApp").click()
-        Select(selenium_driver.find_element_by_id("plhMain_cboVisaCategory")).select_by_index(category)
+        Select(selenium_driver.find_element_by_id("plhMain_cboVAC")).select_by_visible_text(embassy_location_name)
         selenium_driver.find_element_by_id("plhMain_btnSubmit").click()
-        if ("No date(s) available for appointment." in selenium_driver.page_source):
-            log.info(f"No appointments are available, trying again in %d seconds.", schedule_interval)
+        Select(selenium_driver.find_element_by_id("plhMain_cboVisaCategory")).select_by_visible_text(visa_category)
+        selenium_driver.find_element_by_id("plhMain_btnSubmit").click()
+        if ("No date(s) available for appointment" not in selenium_driver.page_source):
+            log.info("No appointments are available, trying again in {} seconds.".format(schedule_interval))
         else:
             log.info("New appointments are available! Please book soon.")
             send_email_notification(email_body)
     finally:
         selenium_driver.quit()
 
-# def display_category_menu prints appointment type menu
-def display_category_menu():
-    print("""
-    Choose application category:
+# def get_category_menu prints appointment type menu
+def get_category_menu():
+    return """Choose visa application category:
     1. Certificate of life (attestatie de vita)
     2. Consular declarations
     3. Copy conform original (NL passport, ID card or driving license)
@@ -57,18 +58,22 @@ def display_category_menu():
     19. Passport, first time application for an adult
     20. Passport, renewal for a minor
     21. Passport, renewal for an adult
-    22. Visa - Schengen, for diplomatic and special passport holders""")
+    22. Visa - Schengen, for diplomatic and special passport holders"""
 
 # def get_category fetches category number entered by user
-def get_category():
+def get_category(menu):
+    print(menu)
+    print("Please enter a valid category number from the above menu (1-22)")
     number = int(input("> "))
-    while number not in range(1,22):
-        log.error("Please enter a valid category number from the above menu")
+    while number not in range(1, 23):
+        print("Invalid input for category number, please try again")
+        log.error("User entered an invalid category number: %s", number)
         number = int(input("> "))
-        # print("ERROR: please ensure you are typing a correct input")
-    return number
+    for item in menu.split("\n"):
+        if str(number) in item:
+            return item.strip()[len(str(number)) + 2:]
 
-# def get_schedule_interval fetches chromedriver
+# def get_chrome_driver fetches chromedriver
 def get_chrome_driver():
     dir_name = os.path.dirname(__file__)
     driver_file = os.path.join(dir_name, driver_path)
@@ -76,35 +81,40 @@ def get_chrome_driver():
 
 # def get_schedule_interval fetches schedule interval entered by user
 def get_schedule_interval():
-    print("Enter a scheduling time interval in minutes e.g., 10, 15, or 20. Default is 60 minutes.")
+    print("Enter a scheduling time interval in minutes e.g., 10, 15, or 20. Default is 60 minutes")
     while True:
         try:
             interval = int(input("> "))
-            return interval * 60
+            if interval > 0:
+                return interval * 60
+            else:
+                print("Invalid input for interval minutes, please try again")
+                log.error(f"User entered an invalid input for interval minutes: %s", interval)
+                interval = int(input("> "))
         except:
-            log.error("Invalid input for interval minutes, please try again.")
+            print("Invalid input for interval minutes, please try again")
+            log.error(f"User entered an invalid input for interval minutes")
 
 # def schedule_notifier schedules the application
 def schedule_notifier():
     threading.Timer(schedule_interval, schedule_notifier).start()
     check_appointment()
-    log.debug("Next application run has been scheduled.")
+    log.debug("Next application run has been scheduled")
 
 # def send_email_notification sends email notification
 def send_email_notification(email_content):
-    recipient = client
     message = MIMEMultipart()
-    message['From'] = client
-    message['To'] = client
+    message['From'] = "{}<{}>".format(app_name, client)
+    message['To'] = recipient
     message['Subject'] = email_subject
     message.attach(MIMEText(email_content, 'plain'))
     body = message.as_string()
     try:
         smtp_server.sendmail(client, recipient, body)
-        log.info(f"Email notification with appointment availability sent to %s.", recipient)
+        log.info(f"Email notification with appointment availability sent to %s", recipient)
         time.sleep(3)
     except:
-        log.error("Unable to send email notification.")
+        log.error("Unable to send email notification")
 
 # def setup_selenium_driver configures selenium driver
 def setup_selenium_driver():
@@ -112,9 +122,9 @@ def setup_selenium_driver():
     chrome_options.add_argument("--headless")
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--disable-dev-shm-usage')
-    driver = webdriver.Chrome(file, options=chrome_options)
+    driver = webdriver.Chrome(driver_file, options=chrome_options)
     driver.get(base_url)
-    log.debug(f"Selenium driver configured successfully for %s.", app_name)
+    log.debug(f"Selenium driver configured successfully for %s", app_name)
     return driver
 
 # def setup_smtp_settings configures smpt server settings
@@ -126,20 +136,21 @@ def setup_smtp_settings(client, password):
         log.debug(f"SMTP login successful for client %s!", client)
         return server
     except:
-        log.error("Credentials are incorrect. Please try again.")
+        log.error("Credentials are incorrect. Please try again")
 
 # decalare application configs
 app_name = "vfs-ind-appointments"
-base_url = "https://www.vfsvisaonline.com/Netherlands-Global-Online-Appointment_Zone2/AppScheduling/AppWelcome.aspx?P=b0KsiJlv+LIdjKDvIvW+nLNY7GnUFdfuwQj4DXbs4vo="
+base_url = "https://www.vfsvisaonline.com/Netherlands-Global-Online-Appointment_Zone1/AppScheduling/AppWelcome.aspx?P=Y83R/PGUiM5WxqKHxt0UdFsdz2igW6T2aLOpDTU7AEw=" # India zone
 email_body = "Make an appointment online here:\n\
 https://www.vfsvisaonline.com/Netherlands-Global-Online-Appointment_Zone1/AppScheduling/AppWelcome.aspx?P=c%2F75XIhVUvxD%2BgDk%2BH%2BCGBV5n9rG51cpAkEXPymduoQ%3D"
 email_subject = app_name + ": new MVV appointments are now available"
-category = 1
+embassy_location_name = "New Delhi"
 driver_path = "./chromedriver"
-recipient = ""
+recipient = "asinha093@gmail.com"
 schedule_interval = 3600
 smtp_address = "smtp.gmail.com"
 smtp_port = 587
+wait_time = 10
 
 # setup logging
 logging.basicConfig(filename=app_name+'.log', filemode='w', format='[%(asctime)s] %(name)s %(levelname)s %(message)s', datefmt='%d-%b-%y %H:%M:%S', level=logging.INFO)
@@ -153,7 +164,7 @@ client = input("Email address: ")
 password = getpass.getpass("Password: ")
 smtp_server = setup_smtp_settings(client, password)
 schedule_interval = get_schedule_interval()
-display_category_menu()
-category = get_category()
-file = get_chrome_driver()
+menu = get_category_menu()
+visa_category = get_category(menu)
+driver_file = get_chrome_driver()
 schedule_notifier()

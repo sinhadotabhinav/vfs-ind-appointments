@@ -32,6 +32,8 @@ vfs-ind-appointments/
 |___README.md
 ```
 
+Update the recipient email address in [`main.py`](https://github.com/sinhadotabhinav/vfs-ind-appointments/blob/master/main.py#L149) file.
+
 Install selenium using pip and execute the python script
 
 ```
