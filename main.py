@@ -111,7 +111,7 @@ def setup_selenium_driver():
     chrome_options = Options()
     chrome_options.add_argument("--headless")
     chrome_options.add_argument('--no-sandbox')
-    chrome_options.add_argument('--disable-dev-shm-usage')    
+    chrome_options.add_argument('--disable-dev-shm-usage')
     driver = webdriver.Chrome(file, options=chrome_options)
     driver.get(base_url)
     log.debug(f"Selenium driver configured successfully for %s.", app_name)
@@ -142,7 +142,7 @@ smtp_address = "smtp.gmail.com"
 smtp_port = 587
 
 # setup logging
-logging.basicConfig(format='[%(asctime)s] %(name)s %(levelname)s %(message)s', datefmt='%d-%b-%y %H:%M:%S', level=logging.INFO)
+logging.basicConfig(filename=app_name+'.log', filemode='w', format='[%(asctime)s] %(name)s %(levelname)s %(message)s', datefmt='%d-%b-%y %H:%M:%S', level=logging.INFO)
 log = logging.getLogger(app_name)
 
 # start application
