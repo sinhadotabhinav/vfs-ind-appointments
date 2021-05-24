@@ -1,9 +1,13 @@
 #!/opt/anaconda3/bin/python3
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 import getpass
 import logging
 import os
+import smtplib
+import threading
+import time
+from datetime import datetime, timedelta
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -11,12 +15,9 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.ui import WebDriverWait
-import smtplib
-import threading
-import time
 
 # def check_appointment retireves available appointments
-def check_appointment():
+def check_appointment(first_run_flag):
     log.info("The application is checking appointment availability for: %s in %s", visa_category, embassy_location_name)
     selenium_driver = setup_selenium_driver()
     try:
@@ -26,12 +27,18 @@ def check_appointment():
         selenium_driver.find_element_by_id("plhMain_btnSubmit").click()
         Select(selenium_driver.find_element_by_id("plhMain_cboVisaCategory")).select_by_visible_text(visa_category)
         selenium_driver.find_element_by_id("plhMain_btnSubmit").click()
-        if ("No date(s) available for appointment" in selenium_driver.page_source):
-            log.info("No appointments are available, trying again in {} seconds.".format(schedule_interval))
+        if "No date(s) available for appointment" in selenium_driver.page_source:
+            log.info("No appointments are available, trying again in {} minutes.".format(schedule_interval/60))
+            if first_run_flag:
+                log.info("Welcome email notification will be sent to the recipient")
+                send_email_notification(email_subject_first, email_body_first)
         else:
             log.info("New appointments are available! Please book soon.")
-            send_email_notification(email_body)
+            send_email_notification(email_subject, email_body)
     finally:
+        global first_run
+        first_run = False
+        run_daily_digest(selenium_driver)
         selenium_driver.quit()
 
 # def get_category_menu prints appointment type menu
@@ -95,26 +102,42 @@ def get_schedule_interval():
             print("Invalid input for interval minutes, please try again")
             log.error(f"User entered an invalid input for interval minutes")
 
+# def run_daily_digest executes a daily report EOD
+def run_daily_digest(selenium_driver):
+    current_time = datetime.now()
+    next_run_time = current_time + timedelta(seconds=schedule_interval)
+    if not (next_run_time.day == current_time.day and \
+      next_run_time.month == current_time.month and \
+      next_run_time.year == current_time.year):
+       log.info("Daily digest report will be sent to the recipient")
+       time.sleep(30)
+       global email_body_digest
+       email_body_digest = email_body_digest + "\n\n{}".format(selenium_driver.page_source)
+       send_email_notification(email_subject_digest, email_body_digest)
+       run_counter = 0
+
 # def schedule_notifier schedules the application
 def schedule_notifier():
+    global run_counter
     threading.Timer(schedule_interval, schedule_notifier).start()
-    check_appointment()
+    run_counter = run_counter + 1
+    check_appointment(first_run)
     log.debug("Next application run has been scheduled")
 
 # def send_email_notification sends email notification
-def send_email_notification(email_content):
+def send_email_notification(subject, content):
     message = MIMEMultipart()
     message['From'] = "{}<{}>".format(app_name, client)
     message['To'] = recipient
-    message['Subject'] = email_subject
-    message.attach(MIMEText(email_content, 'plain'))
+    message['Subject'] = subject
+    message.attach(MIMEText(content, 'html'))
     body = message.as_string()
     try:
         smtp_server.sendmail(client, recipient, body)
-        log.info(f"Email notification with appointment availability sent to %s", recipient)
+        log.info(f"Email notification sent to %s", recipient)
         time.sleep(3)
     except:
-        log.error("Unable to send email notification")
+        log.error("Unable to send email notification at the moments")
 
 # def setup_selenium_driver configures selenium driver
 def setup_selenium_driver():
@@ -141,12 +164,18 @@ def setup_smtp_settings(client, password):
 # decalare application configs
 app_name = "vfs-ind-appointments"
 base_url = "https://www.vfsvisaonline.com/Netherlands-Global-Online-Appointment_Zone1/AppScheduling/AppWelcome.aspx?P=Y83R/PGUiM5WxqKHxt0UdFsdz2igW6T2aLOpDTU7AEw=" # India zone
+driver_path = "./chromedriver"
 email_body = "Make an appointment online here:\n\
 https://www.vfsvisaonline.com/Netherlands-Global-Online-Appointment_Zone1/AppScheduling/AppWelcome.aspx?P=c%2F75XIhVUvxD%2BgDk%2BH%2BCGBV5n9rG51cpAkEXPymduoQ%3D"
+email_body_digest = "Welcome to the daily digest report. The application periodically checked for appointments and will continue to look for new slots tomorrow."
+email_body_first = "There are no appointments available at the moment. The application will run periodically and send alerts."
 email_subject = app_name + ": new MVV appointments are now available"
+email_subject_digest = app_name + ": daily digest report"
+email_subject_first = app_name + ": thank you for using this application"
 embassy_location_name = "New Delhi"
-driver_path = "./chromedriver"
+first_run = True
 recipient = "asinha093@gmail.com"
+run_counter = 0
 schedule_interval = 3600
 smtp_address = "smtp.gmail.com"
 smtp_port = 587
@@ -159,12 +188,14 @@ log = logging.getLogger(app_name)
 # start application
 log.info("vfs-ind-appointments has started")
 
+# display interactive emenu
 print("Please enter your Gmail credentials below:")
 client = input("Email address: ")
 password = getpass.getpass("Password: ")
 smtp_server = setup_smtp_settings(client, password)
-schedule_interval = get_schedule_interval()
-menu = get_category_menu()
-visa_category = get_category(menu)
-driver_file = get_chrome_driver()
-schedule_notifier()
+if smtp_server is not None:
+    schedule_interval = get_schedule_interval()
+    menu = get_category_menu()
+    visa_category = get_category(menu)
+    driver_file = get_chrome_driver()
+    schedule_notifier()

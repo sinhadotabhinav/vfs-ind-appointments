@@ -1,9 +1,13 @@
 # vfs-ind-appointments
 
+[![Latest Release](https://img.shields.io/github/v/tag/sinhadotabhinav/vfs-ind-appointments.svg)](https://github.com/sinhadotabhinav/vfs-ind-appointments/releases)
 
 ## Overview
 
-This application is a VFS appointment notifier to obtain consulate assistance from kingdom of the Netherlands.
+This application is a VFS appointment notifier to obtain consulate assistance from kingdom of the Netherlands. This project sends email alerts as follows:
+1. Welcome email
+2. New appointments availability
+3. Daily digest report
 
 ## Usage
 
