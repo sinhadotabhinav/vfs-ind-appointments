@@ -112,6 +112,7 @@ def run_daily_digest(selenium_driver):
        log.info("Daily digest report will be sent to the recipient")
        time.sleep(30)
        global email_body_digest
+       global run_counter    
        email_body_digest = email_body_digest + "\n\n{}".format(selenium_driver.page_source)
        send_email_notification(email_subject_digest, email_body_digest)
        run_counter = 0
