@@ -112,16 +112,12 @@ def run_daily_digest(selenium_driver):
        log.info("Daily digest report will be sent to the recipient")
        time.sleep(30)
        global email_body_digest
-       global run_counter    
        email_body_digest = email_body_digest + "\n\n{}".format(selenium_driver.page_source)
-       send_email_notification(email_subject_digest, email_body_digest)
-       run_counter = 0
+       Send_email_notification(email_subject_digest, email_body_digest)
 
 # def schedule_notifier schedules the application
 def schedule_notifier():
-    global run_counter
     threading.Timer(schedule_interval, schedule_notifier).start()
-    run_counter = run_counter + 1
     check_appointment(first_run)
     log.debug("Next application run has been scheduled")
 
@@ -176,7 +172,6 @@ email_subject_first = app_name + ": thank you for using this application"
 embassy_location_name = "New Delhi"
 first_run = True
 recipient = "asinha093@gmail.com"
-run_counter = 0
 schedule_interval = 3600
 smtp_address = "smtp.gmail.com"
 smtp_port = 587
