@@ -113,7 +113,7 @@ def run_daily_digest(selenium_driver):
        time.sleep(30)
        global email_body_digest
        email_body_digest = email_body_digest + "\n\n{}".format(selenium_driver.page_source)
-       Send_email_notification(email_subject_digest, email_body_digest)
+       send_email_notification(email_subject_digest, email_body_digest)
 
 # def schedule_notifier schedules the application
 def schedule_notifier():
