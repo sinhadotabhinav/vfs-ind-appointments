@@ -30,11 +30,11 @@ def check_appointment(first_run_flag):
         if "No date(s) available for appointment" in selenium_driver.page_source:
             log.info("No appointments are available, trying again in {} minutes.".format(schedule_interval/60))
             if first_run_flag:
-                log.debug("Welcome email notification will be sent to the recipient")
-                send_email_notification(email_subject_first, email_body_first, 'welcome')
+                log.info("Welcome email notification will be sent to the recipient")
+                send_email_notification(email_subject_first, email_body_first)
         else:
             log.info("New appointments are available! Please book soon.")
-            send_email_notification(email_subject, email_body, 'new appointment')
+            send_email_notification(email_subject, email_body)
     finally:
         global first_run
         first_run = False
@@ -109,11 +109,11 @@ def run_daily_digest(selenium_driver):
     if not (next_run_time.day == current_time.day and \
       next_run_time.month == current_time.month and \
       next_run_time.year == current_time.year):
-      log.debug("Daily digest report will be sent to the recipient")
-      time.sleep(5)
-      global email_body_digest
-      email_body_digest = email_body_digest + "\n\n{}".format(selenium_driver.page_source)
-      send_email_notification(email_subject_digest, email_body_digest, 'daily digest')
+       log.info("Daily digest report will be sent to the recipient")
+       time.sleep(30)
+       global email_body_digest
+       email_body_digest = email_body_digest + "\n\n{}".format(selenium_driver.page_source)
+       send_email_notification(email_subject_digest, email_body_digest)
 
 # def schedule_notifier schedules the application
 def schedule_notifier():
@@ -122,20 +122,21 @@ def schedule_notifier():
     log.debug("Next application run has been scheduled")
 
 # def send_email_notification sends email notification
-def send_email_notification(subject, content, event):
+def send_email_notification(subject, content):
     message = MIMEMultipart()
     message['From'] = "{}<{}>".format(app_name, client)
     message['To'] = recipient
     message['Subject'] = subject
     message.attach(MIMEText(content, 'html'))
     body = message.as_string()
-    smtp_conn = setup_smtp_settings(client, password)
+    log.info(body)
     try:
-        smtp_conn.sendmail(client, recipient, body)
-        log.info(f"Email notification sent to %s (%s)", recipient, event)
-        time.sleep(5)
-    except smtplib.SMTPException as e:
-        log.error("Unable to send email notification at the moment: %s (%s), will retry", e, event)
+        smtp_server.sendmail(client, recipient, body)
+        log.info(f"Email notification sent to %s", recipient)
+        time.sleep(3)
+    except:
+        e = sys.exc_info()[0]
+        log.error("Unable to send email notification at the moment: %s", e)
 
 # def setup_selenium_driver configures selenium driver
 def setup_selenium_driver():
@@ -156,8 +157,8 @@ def setup_smtp_settings(client, password):
         server.login(client, password)
         log.debug(f"SMTP login successful for client %s!", client)
         return server
-    except smtplib.SMTPException as e:
-        log.error("Unsuccessful login %s. Please try again", e)
+    except:
+        log.error("Credentials are incorrect. Please try again")
 
 # decalare application configs
 app_name = "vfs-ind-appointments"
