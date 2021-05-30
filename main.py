@@ -111,9 +111,8 @@ def run_daily_digest(selenium_driver):
       next_run_time.year == current_time.year):
       log.debug("Daily digest report will be sent to the recipient")
       time.sleep(5)
-      global email_body_digest
-      email_body_digest = email_body_digest + "\n\n{}".format(selenium_driver.page_source)
-      send_email_notification(email_subject_digest, email_body_digest, 'daily digest')
+      email_body = email_body_digest + "\n\n{}".format(selenium_driver.page_source)
+      send_email_notification(email_subject_digest, email_body, 'daily digest')
 
 # def schedule_notifier schedules the application
 def schedule_notifier():
